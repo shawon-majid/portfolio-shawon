@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 type Kind = "user" | "sys" | "ai" | "err";
 type Line = { id: number; kind: Kind; text: string };
-type ChatTurn = { role: "user" | "assistant"; content: string };
 
 const SUGGESTIONS = [
   "what do you do at Vyg.ai?",
@@ -92,8 +91,6 @@ export default function Terminal() {
   ]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
-  const [convo, setConvo] = useState<ChatTurn[]>([]);
-  const [streaming, setStreaming] = useState("");
   const inputRef = useRef<HTMLInputElement | null>(null);
   const bodyRef = useRef<HTMLDivElement | null>(null);
   const idRef = useRef(1);
@@ -105,7 +102,7 @@ export default function Terminal() {
 
   useEffect(() => {
     if (bodyRef.current) bodyRef.current.scrollTop = bodyRef.current.scrollHeight;
-  }, [history, busy, streaming]);
+  }, [history, busy]);
 
   useEffect(() => {
     const focus = () => inputRef.current?.focus();
@@ -170,39 +167,14 @@ export default function Terminal() {
       }
 
       setBusy(true);
-      setStreaming("");
       try {
-        const res = await fetch("/api/ask", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ question: q, history: convo }),
-        });
-        if (!res.ok || !res.body) throw new Error(`status ${res.status}`);
-        const reader = res.body.getReader();
-        const dec = new TextDecoder();
-        let acc = "";
-        while (true) {
-          const { value, done } = await reader.read();
-          if (done) break;
-          const chunk = dec.decode(value, { stream: true });
-          acc += chunk;
-          setStreaming(acc);
-        }
-        const clean = acc.trim() || localAnswer(q);
-        setStreaming("");
-        push("ai", clean);
-        setConvo((c) => [...c, { role: "user", content: q }, { role: "assistant", content: clean }]);
-      } catch {
-        setStreaming("");
-        const fallback = localAnswer(q);
-        push("ai", fallback);
-        setConvo((c) => [...c, { role: "user", content: q }, { role: "assistant", content: fallback }]);
+        push("ai", localAnswer(q));
       } finally {
         setBusy(false);
         setTimeout(() => inputRef.current?.focus(), 50);
       }
     },
-    [busy, convo, push],
+    [busy, push],
   );
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -252,7 +224,7 @@ export default function Terminal() {
               ask-shawon — <b>~/portfolio</b> — zsh
             </div>
             <div className="term-model">
-              <span className="dotlive" /> gpt-4o-mini
+              <span className="dotlive" /> local mode
             </div>
           </div>
 
@@ -303,15 +275,11 @@ export default function Terminal() {
                 <span className="ps">◆</span>
                 <span className="who">shawon</span>
                 <span className="t">
-                  {streaming ? (
-                    streaming
-                  ) : (
-                    <span className="typing">
-                      <i />
-                      <i />
-                      <i />
-                    </span>
-                  )}
+                  <span className="typing">
+                    <i />
+                    <i />
+                    <i />
+                  </span>
                 </span>
               </div>
             )}
@@ -342,7 +310,7 @@ export default function Terminal() {
       </main>
 
       <footer className="foot">
-        <span>built with next.js · react · openai</span>
+        <span>built with next.js · react · local answers</span>
         <span className="keys">
           <kbd>/</kbd> focus <kbd>Ctrl</kbd>+<kbd>L</kbd> clear <kbd>↵</kbd> send
         </span>
