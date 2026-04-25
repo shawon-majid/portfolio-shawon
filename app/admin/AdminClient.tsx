@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import SettingsPanel from "./SettingsPanel";
 
 type Entry = {
   id: string;
@@ -110,6 +111,8 @@ export default function AdminClient() {
     <div className="admin">
       <h1>admin</h1>
       <div className="sub">knowledge base for ask-shawon · basic-auth gated</div>
+
+      <SettingsPanel />
 
       <section>
         <h2>upload</h2>

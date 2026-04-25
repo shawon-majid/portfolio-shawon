@@ -1,9 +1,20 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { readStreamableValue } from "ai/rsc";
+import { ask } from "@/app/actions/ask";
 
 type Kind = "user" | "sys" | "ai" | "err";
 type Line = { id: number; kind: Kind; text: string };
+type ChatTurn = { role: "user" | "assistant"; content: string };
+type StatusMode = "open-to-work" | "busy" | "offline" | "custom";
+
+type InitialSettings = {
+  askEnabled: boolean;
+  model: string;
+  headlines: string[];
+  status: { mode: StatusMode; label: string };
+};
 
 const SUGGESTIONS = [
   "what do you do at Vyg.ai?",
@@ -12,15 +23,6 @@ const SUGGESTIONS = [
   "are you open to work?",
   "tell me about DeepAgents",
   "where are you based?",
-];
-
-const TAGLINES = [
-  "I build AI-augmented backends.",
-  "Currently shipping at Vyg.ai — remote, from Sylhet.",
-  "Agentic workflows. LangGraph. Serverless on AWS + GCP.",
-  "Cut AI inference cost 50% with batch pipelines.",
-  "Champion — Code Samurai 2024.",
-  "Open to work on hard AI-systems problems.",
 ];
 
 function localAnswer(q: string): string {
@@ -47,6 +49,7 @@ function useTyper(lines: string[], opts?: { typeMs?: number; holdMs?: number; er
   const [txt, setTxt] = useState("");
   const [phase, setPhase] = useState<"type" | "hold" | "erase">("type");
   useEffect(() => {
+    if (lines.length === 0) return;
     const cur = lines[i % lines.length];
     let t: ReturnType<typeof setTimeout>;
     if (phase === "type") {
@@ -84,17 +87,38 @@ function syl(t: Date) {
   }).format(t);
 }
 
-export default function Terminal() {
+function statusDotColor(mode: StatusMode): string {
+  switch (mode) {
+    case "open-to-work":
+      return "var(--ok)";
+    case "busy":
+      return "#e0a96d";
+    case "offline":
+      return "var(--muted)";
+    default:
+      return "var(--accent)";
+  }
+}
+
+export default function Terminal({ initial }: { initial: InitialSettings }) {
   const now = useClock();
   const [history, setHistory] = useState<Line[]>([
-    { id: 0, kind: "sys", text: "ask-shawon v1.0 — type anything about me, or /help." },
+    {
+      id: 0,
+      kind: "sys",
+      text: initial.askEnabled
+        ? "ask-shawon v1.0 — type anything about me, or /help."
+        : "ask-shawon v1.0 — ai is paused right now. /help still works.",
+    },
   ]);
+  const [convo, setConvo] = useState<ChatTurn[]>([]);
+  const [streaming, setStreaming] = useState<string>("");
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const bodyRef = useRef<HTMLDivElement | null>(null);
   const idRef = useRef(1);
-  const tagline = useTyper(TAGLINES);
+  const tagline = useTyper(initial.headlines.length ? initial.headlines : ["ask-shawon"]);
 
   const push = useCallback((kind: Kind, text: string) => {
     setHistory((h) => [...h, { id: idRef.current++, kind, text }]);
@@ -102,7 +126,7 @@ export default function Terminal() {
 
   useEffect(() => {
     if (bodyRef.current) bodyRef.current.scrollTop = bodyRef.current.scrollHeight;
-  }, [history, busy]);
+  }, [history, busy, streaming]);
 
   useEffect(() => {
     const focus = () => inputRef.current?.focus();
@@ -136,6 +160,7 @@ export default function Terminal() {
       }
       if (q === "/clear") {
         setHistory([]);
+        setConvo([]);
         return;
       }
       if (q === "/contact") {
@@ -167,14 +192,68 @@ export default function Terminal() {
       }
 
       setBusy(true);
+      setStreaming("");
       try {
-        push("ai", localAnswer(q));
+        const result = await ask({ question: q, history: convo });
+
+        if (result.type === "disabled") {
+          push("sys", result.message);
+          push("ai", localAnswer(q));
+          return;
+        }
+        if (result.type === "rate-limited") {
+          push(
+            "err",
+            `slow down — ${result.limit}/hr cap reached. try again in ${result.retryAfterSeconds}s.`,
+          );
+          return;
+        }
+        if (result.type === "error") {
+          push("err", result.message);
+          return;
+        }
+
+        let acc = "";
+        try {
+          for await (const text of readStreamableValue(result.value)) {
+            if (typeof text === "string") {
+              acc = text;
+              setStreaming(text);
+            }
+          }
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : "stream error";
+          if (acc) {
+            push("ai", `${acc}\n[error: ${msg}]`);
+          } else {
+            push("err", msg);
+          }
+          setStreaming("");
+          return;
+        }
+
+        if (acc) {
+          push("ai", acc);
+          setConvo((c) =>
+            [
+              ...c,
+              { role: "user" as const, content: q },
+              { role: "assistant" as const, content: acc },
+            ].slice(-12),
+          );
+        } else {
+          push("err", "no response from model");
+        }
+        setStreaming("");
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "request failed";
+        push("err", msg);
       } finally {
         setBusy(false);
         setTimeout(() => inputRef.current?.focus(), 50);
       }
     },
-    [busy, push],
+    [busy, convo, push],
   );
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -192,6 +271,8 @@ export default function Terminal() {
     submit(q);
   };
 
+  const dotStyle = { background: statusDotColor(initial.status.mode) };
+
   return (
     <div className="app">
       <header className="bar">
@@ -206,7 +287,7 @@ export default function Terminal() {
         </nav>
         <div className="bar-meta">
           <span className="pulse">
-            <i /> open to work
+            <i style={dotStyle} /> {initial.status.label}
           </span>
           <span suppressHydrationWarning>{now ? `${syl(now)} · SYL` : "—— · SYL"}</span>
         </div>
@@ -224,7 +305,7 @@ export default function Terminal() {
               ask-shawon — <b>~/portfolio</b> — zsh
             </div>
             <div className="term-model">
-              <span className="dotlive" /> local mode
+              <span className="dotlive" /> {initial.askEnabled ? initial.model : "ai paused"}
             </div>
           </div>
 
@@ -275,11 +356,18 @@ export default function Terminal() {
                 <span className="ps">◆</span>
                 <span className="who">shawon</span>
                 <span className="t">
-                  <span className="typing">
-                    <i />
-                    <i />
-                    <i />
-                  </span>
+                  {streaming ? (
+                    <>
+                      {streaming}
+                      <span className="cur" />
+                    </>
+                  ) : (
+                    <span className="typing">
+                      <i />
+                      <i />
+                      <i />
+                    </span>
+                  )}
                 </span>
               </div>
             )}
@@ -310,7 +398,7 @@ export default function Terminal() {
       </main>
 
       <footer className="foot">
-        <span>built with next.js · react · local answers</span>
+        <span>built with next.js · react · openai</span>
         <span className="keys">
           <kbd>/</kbd> focus <kbd>Ctrl</kbd>+<kbd>L</kbd> clear <kbd>↵</kbd> send
         </span>
