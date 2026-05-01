@@ -67,7 +67,13 @@ export async function ask(input: { question: string; history?: ChatTurn[] }): Pr
   (async () => {
     let acc = "";
     try {
-      for await (const delta of streamAsk({ question, history, kbText, model: settings.model })) {
+      for await (const delta of streamAsk({
+        question,
+        history,
+        kbText,
+        model: settings.model,
+        systemPrompt: settings.systemPrompt,
+      })) {
         acc += delta;
         stream.update(acc);
       }

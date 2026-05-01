@@ -3,11 +3,12 @@ import { PROFILE, SYSTEM_PROMPT } from "./profile";
 
 export type ChatTurn = { role: "user" | "assistant"; content: string };
 
-export function buildSystemContent(kbText: string): string {
+export function buildSystemContent(kbText: string, systemPrompt?: string): string {
+  const sp = systemPrompt && systemPrompt.trim() ? systemPrompt.trim() : SYSTEM_PROMPT;
   const kbBlock = kbText.trim()
     ? `\n\n--- UPLOADED KNOWLEDGE ---\n${kbText.trim()}\n--- END UPLOADED KNOWLEDGE ---`
     : "";
-  return `${SYSTEM_PROMPT}\n\nPROFILE:\n${PROFILE}${kbBlock}`;
+  return `${sp}\n\nPROFILE:\n${PROFILE}${kbBlock}`;
 }
 
 let client: OpenRouter | null = null;
@@ -28,9 +29,10 @@ export async function* streamAsk(opts: {
   history: ChatTurn[];
   kbText: string;
   model: string;
+  systemPrompt?: string;
 }): AsyncGenerator<string, void, unknown> {
   const messages = [
-    { role: "system" as const, content: buildSystemContent(opts.kbText) },
+    { role: "system" as const, content: buildSystemContent(opts.kbText, opts.systemPrompt) },
     ...opts.history.slice(-6).map((t) => ({ role: t.role, content: t.content })),
     { role: "user" as const, content: opts.question },
   ];

@@ -1,5 +1,7 @@
 import { put, del, list } from "@vercel/blob";
 
+import { SYSTEM_PROMPT as DEFAULT_SYSTEM_PROMPT } from "./profile";
+
 export type StatusMode = "open-to-work" | "busy" | "offline" | "custom";
 
 export type Settings = {
@@ -8,6 +10,7 @@ export type Settings = {
   rateLimit: { maxPerHour: number | null };
   headlines: string[];
   status: { mode: StatusMode; label: string };
+  systemPrompt: string;
   updatedAt: string;
 };
 
@@ -29,6 +32,8 @@ export const MAX_HEADLINE_CHARS = 140;
 export const MAX_STATUS_LABEL_CHARS = 40;
 export const MAX_MODEL_CHARS = 80;
 export const MAX_RATE_LIMIT = 1_000_000;
+export const MAX_SYSTEM_PROMPT_CHARS = 8_000;
+export const DEFAULT_SYSTEM_PROMPT_TEXT = DEFAULT_SYSTEM_PROMPT;
 
 export function defaultSettings(): Settings {
   return {
@@ -39,6 +44,7 @@ export function defaultSettings(): Settings {
     },
     headlines: DEFAULT_HEADLINES.slice(),
     status: { mode: "open-to-work", label: "open to work" },
+    systemPrompt: DEFAULT_SYSTEM_PROMPT,
     updatedAt: new Date(0).toISOString(),
   };
 }
@@ -113,6 +119,10 @@ function mergeWithDefaults(raw: Partial<Settings>): Settings {
           ? raw.status.label.trim().slice(0, MAX_STATUS_LABEL_CHARS)
           : d.status.label,
     },
+    systemPrompt:
+      typeof raw.systemPrompt === "string" && raw.systemPrompt.trim()
+        ? raw.systemPrompt.slice(0, MAX_SYSTEM_PROMPT_CHARS)
+        : d.systemPrompt,
     updatedAt: typeof raw.updatedAt === "string" ? raw.updatedAt : d.updatedAt,
   };
 }
@@ -190,6 +200,17 @@ export function validatePartial(input: unknown): Partial<Settings> {
     }
     out.status = { mode, label: s.label.trim() };
   }
+  if ("systemPrompt" in raw) {
+    if (typeof raw.systemPrompt !== "string") {
+      throw new SettingsValidationError("systemPrompt must be a string");
+    }
+    const trimmed = raw.systemPrompt.trim();
+    if (!trimmed) throw new SettingsValidationError("systemPrompt must be non-empty");
+    if (trimmed.length > MAX_SYSTEM_PROMPT_CHARS) {
+      throw new SettingsValidationError(`systemPrompt too long (max ${MAX_SYSTEM_PROMPT_CHARS} chars)`);
+    }
+    out.systemPrompt = trimmed;
+  }
   return out;
 }
 
@@ -204,6 +225,7 @@ export async function saveSettings(partial: Partial<Settings>): Promise<Settings
     rateLimit: { maxPerHour: partial.rateLimit?.maxPerHour ?? current.rateLimit.maxPerHour },
     headlines: partial.headlines ?? current.headlines,
     status: partial.status ?? current.status,
+    systemPrompt: partial.systemPrompt ?? current.systemPrompt,
     updatedAt: new Date().toISOString(),
   };
   await writeManifest(next);

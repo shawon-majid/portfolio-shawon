@@ -10,8 +10,11 @@ type Settings = {
   rateLimit: { maxPerHour: number | null };
   headlines: string[];
   status: { mode: StatusMode; label: string };
+  systemPrompt: string;
   updatedAt: string;
 };
+
+const MAX_SYSTEM_PROMPT_CHARS = 8_000;
 
 type Status = { tone: "" | "ok" | "err"; msg: string };
 
@@ -58,16 +61,22 @@ export default function SettingsPanel() {
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<Status>({ tone: "", msg: "" });
   const [blobsEnabledFlag, setBlobsEnabledFlag] = useState(true);
+  const [defaultSystemPrompt, setDefaultSystemPrompt] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch("/api/admin/settings", { cache: "no-store" });
-      const json = (await res.json()) as { settings: Settings; blobsEnabled: boolean };
+      const json = (await res.json()) as {
+        settings: Settings;
+        blobsEnabled: boolean;
+        defaults?: { systemPrompt?: string };
+      };
       setSettings(json.settings);
       setDraft(json.settings);
       setHeadlinesText(json.settings.headlines.join("\n"));
       setBlobsEnabledFlag(json.blobsEnabled);
+      if (json.defaults?.systemPrompt) setDefaultSystemPrompt(json.defaults.systemPrompt);
 
       const m = json.settings.rateLimit.maxPerHour;
       if (m === null) {
@@ -97,6 +106,7 @@ export default function SettingsPanel() {
     if (settings.status.mode !== draft.status.mode) return true;
     if (settings.status.label !== draft.status.label) return true;
     if (settings.headlines.join("\n") !== headlinesText) return true;
+    if (settings.systemPrompt !== draft.systemPrompt) return true;
     return false;
   }, [settings, draft, headlinesText]);
 
@@ -122,6 +132,7 @@ export default function SettingsPanel() {
           rateLimit: { maxPerHour: draft.rateLimit.maxPerHour },
           headlines,
           status: { mode: draft.status.mode, label: draft.status.label },
+          systemPrompt: draft.systemPrompt,
         }),
       });
       const json = await res.json().catch(() => ({}));
@@ -280,6 +291,36 @@ export default function SettingsPanel() {
           <span className="hint">
             {headlinesText.split("\n").filter((s) => s.trim()).length} / 12 lines
           </span>
+        </label>
+
+        <label className="field field-wide">
+          <span className="field-label">
+            system prompt — sent to the model before profile + uploaded knowledge
+          </span>
+          <textarea
+            value={draft.systemPrompt}
+            onChange={(e) =>
+              setDraft({ ...draft, systemPrompt: e.target.value.slice(0, MAX_SYSTEM_PROMPT_CHARS) })
+            }
+            rows={12}
+            spellCheck={false}
+            style={{ fontFamily: "var(--mono)", fontSize: 12.5 }}
+          />
+          <div className="field-row" style={{ justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+            <span className="hint">
+              {draft.systemPrompt.length.toLocaleString()} / {MAX_SYSTEM_PROMPT_CHARS.toLocaleString()} chars
+            </span>
+            {defaultSystemPrompt && draft.systemPrompt !== defaultSystemPrompt && (
+              <button
+                type="button"
+                className="back"
+                onClick={() => setDraft({ ...draft, systemPrompt: defaultSystemPrompt })}
+                style={{ padding: "4px 10px", fontSize: 11.5 }}
+              >
+                reset to default
+              </button>
+            )}
+          </div>
         </label>
       </div>
 

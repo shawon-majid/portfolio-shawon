@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   blobsEnabled,
+  DEFAULT_SYSTEM_PROMPT_TEXT,
   getSettings,
   saveSettings,
   SettingsValidationError,
@@ -12,7 +13,11 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   const settings = await getSettings();
-  return NextResponse.json({ settings, blobsEnabled: blobsEnabled() });
+  return NextResponse.json({
+    settings,
+    blobsEnabled: blobsEnabled(),
+    defaults: { systemPrompt: DEFAULT_SYSTEM_PROMPT_TEXT },
+  });
 }
 
 export async function POST(req: NextRequest) {
