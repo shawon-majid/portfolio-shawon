@@ -18,9 +18,10 @@ html, body {
   background: var(--bg);
   color: var(--ink);
   font-family: var(--mono);
-  font-size: 14px;
+  font-size: 13.5px;
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   overflow: hidden;
 }
 a { color: inherit; text-decoration: none; }
@@ -43,9 +44,13 @@ body::before {
 
 .bar {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 20px 32px; font-size: 11px; color: var(--muted); letter-spacing: .04em;
+  padding: 18px 32px; font-size: 12.5px; color: var(--muted); letter-spacing: .04em;
 }
-.brand { display: flex; align-items: center; gap: 10px; color: var(--ink); font-weight: 500; }
+.brand {
+  display: flex; align-items: center; gap: 10px;
+  color: var(--ink); font-weight: 500;
+  font-size: 14px; letter-spacing: .01em;
+}
 .brand .sq { width: 7px; height: 7px; background: var(--accent); }
 .bar-links { display: flex; gap: 22px; }
 .bar-links a { transition: color .15s; }
@@ -53,7 +58,7 @@ body::before {
 .bar-meta { display: flex; gap: 20px; align-items: center; }
 .pulse { display: inline-flex; align-items: center; gap: 7px; }
 .pulse i {
-  width: 6px; height: 6px; border-radius: 50%; background: var(--ok);
+  width: 7px; height: 7px; border-radius: 50%; background: var(--ok);
   box-shadow: 0 0 0 0 rgba(143,180,106,.55);
   animation: pulse 2s infinite;
   font-style: normal;
@@ -74,10 +79,10 @@ body::before {
   padding: 0 32px 24px; min-height: 0; gap: 26px;
 }
 
-.hints { width: 100%; max-width: 760px; display: flex; flex-wrap: wrap; gap: 8px; }
+.hints { width: 100%; max-width: 760px; display: flex; flex-wrap: wrap; gap: 7px; }
 .hints button {
-  padding: 7px 13px; border: .5px solid var(--rule-2); border-radius: 999px;
-  color: var(--muted); font-family: var(--mono); font-size: 11.5px;
+  padding: 6px 12px; border: .5px solid var(--rule-2); border-radius: 999px;
+  color: var(--muted); font-family: var(--mono); font-size: 12.5px;
   background: transparent; transition: all .15s;
 }
 .hints button:hover { border-color: var(--accent); color: var(--ink); }
@@ -102,22 +107,22 @@ body::before {
 .dots i:nth-child(1) { background: #ff5f57; }
 .dots i:nth-child(2) { background: #febc2e; }
 .dots i:nth-child(3) { background: #28c840; }
-.term-title { flex: 1; text-align: center; font-size: 11.5px; color: var(--muted); letter-spacing: .02em; }
+.term-title { flex: 1; text-align: center; font-size: 12.5px; color: var(--muted); letter-spacing: .02em; }
 .term-title b { color: var(--ink-2); font-weight: 500; }
-.term-model { font-size: 10.5px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.term-model { font-size: 11.5px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
 .term-model .dotlive { width: 5px; height: 5px; border-radius: 50%; background: var(--ok); }
 
 .term-body {
   flex: 1; padding: 20px 22px 4px; overflow-y: auto;
   scrollbar-width: thin; scrollbar-color: var(--rule-2) transparent;
-  font-size: 13.5px; line-height: 1.65;
+  font-size: 13px; line-height: 1.65;
 }
 .term-body::-webkit-scrollbar { width: 8px; }
 .term-body::-webkit-scrollbar-thumb { background: var(--rule-2); border-radius: 4px; }
 
 .line { display: flex; gap: 10px; align-items: flex-start; padding: 2px 0; }
 .line .ps { color: var(--accent); user-select: none; flex-shrink: 0; }
-.line .who { color: var(--muted); user-select: none; flex-shrink: 0; min-width: 72px; }
+.line .who { color: var(--muted); user-select: none; flex-shrink: 0; min-width: 68px; font-size: 12px; letter-spacing: .02em; }
 .line .t { color: var(--ink); white-space: pre-wrap; word-break: break-word; flex: 1; }
 .line.user .t { color: var(--ink); }
 .line.sys .t  { color: var(--muted); }
@@ -128,10 +133,10 @@ body::before {
 .line.banner .who { color: var(--accent); }
 .line.banner .t {
   color: var(--ink); font-family: var(--mono); font-weight: 500;
-  font-size: 15px; letter-spacing: -.005em; line-height: 1.4;
+  font-size: 14.5px; letter-spacing: -.005em; line-height: 1.4;
 }
 .line.banner .t .cur {
-  display: inline-block; width: 7px; height: 14px; background: var(--accent);
+  display: inline-block; width: 6px; height: 13px; background: var(--accent);
   vertical-align: -2px; margin-left: 3px;
   animation: blink 1s steps(2) infinite;
 }
@@ -164,11 +169,11 @@ body::before {
 }
 
 .foot {
-  padding: 16px 32px; display: flex; justify-content: space-between; align-items: center;
-  font-size: 10.5px; color: var(--muted); letter-spacing: .04em;
+  padding: 14px 32px; display: flex; justify-content: space-between; align-items: center;
+  font-size: 11.5px; color: var(--muted); letter-spacing: .05em;
 }
 .foot .keys kbd {
-  font: inherit; padding: 2px 5px; border: .5px solid var(--rule-2);
+  font: inherit; padding: 2px 6px; border: .5px solid var(--rule-2);
   border-radius: 4px; color: var(--ink-2); margin: 0 3px; background: rgba(255,255,255,.02);
 }
 @media (max-width: 720px) {
@@ -265,4 +270,60 @@ body::before {
 .admin .settings-actions button.back:disabled { opacity: .35; cursor: not-allowed; }
 @media (max-width: 600px) {
   .admin .settings-grid { grid-template-columns: 1fr; }
+}
+
+/* Notes panel */
+.admin .note-card {
+  border: .5px solid var(--rule); border-radius: 8px;
+  margin-bottom: 10px; background: rgba(0,0,0,.18);
+  overflow: hidden;
+}
+.admin .note-head {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px;
+}
+.admin .note-toggle {
+  flex: 1; display: flex; align-items: center; gap: 10px;
+  text-align: left; padding: 0; color: var(--ink); font: inherit;
+}
+.admin .note-toggle .caret {
+  color: var(--muted); font-size: 11px; width: 12px;
+}
+.admin .note-toggle .note-name {
+  color: var(--ink); font-weight: 500; font-size: 13px;
+}
+.admin .note-toggle .note-meta {
+  color: var(--muted); font-size: 11px; margin-left: 8px;
+}
+.admin .note-edit {
+  display: flex; flex-direction: column; gap: 10px;
+  padding: 12px 14px 14px;
+  border-top: .5px solid var(--rule);
+  background: rgba(0,0,0,.22);
+}
+.admin .note-card > .note-edit { border-top: .5px solid var(--rule); }
+.admin section > .note-edit {
+  border: .5px solid var(--rule-2); border-radius: 8px;
+  margin-bottom: 14px; background: rgba(0,0,0,.18);
+}
+.admin .note-title {
+  background: rgba(0,0,0,.28); color: var(--ink);
+  border: .5px solid var(--rule-2); border-radius: 6px;
+  padding: 9px 11px; font: inherit; font-size: 13px;
+  outline: none; transition: border-color .15s;
+}
+.admin .note-title:focus { border-color: var(--accent); }
+.admin .note-body {
+  background: rgba(0,0,0,.32); color: var(--ink);
+  border: .5px solid var(--rule-2); border-radius: 6px;
+  padding: 11px 13px; font-family: var(--mono); font-size: 12.5px;
+  line-height: 1.6; outline: none; resize: vertical;
+  min-height: 200px; transition: border-color .15s;
+}
+.admin .note-body:focus { border-color: var(--accent); }
+.admin .note-actions {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+}
+.admin .note-actions .status {
+  margin: 0; font-size: 11.5px;
 }

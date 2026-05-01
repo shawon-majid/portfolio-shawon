@@ -2,7 +2,7 @@
 
 import { headers } from "next/headers";
 import { createStreamableValue, type StreamableValue } from "ai/rsc";
-import { streamAsk, type ChatTurn } from "@/lib/openai";
+import { streamAsk, type ChatTurn } from "@/lib/llm";
 import { loadKnowledgeText } from "@/lib/kb";
 import { takeRateLimit } from "@/lib/rate-limit";
 import { getSettings } from "@/lib/settings";
@@ -33,6 +33,13 @@ export async function ask(input: { question: string; history?: ChatTurn[] }): Pr
       message: "ai is offline right now — try a chip below or email shawon.majid@gmail.com.",
     };
   }
+  if (!process.env.OPENROUTER_API_KEY) {
+    console.error("[ask] OPENROUTER_API_KEY missing in environment");
+    return {
+      type: "error",
+      message: "ai provider not configured — try /help or email shawon.majid@gmail.com.",
+    };
+  }
 
   const maxPerHour = settings.rateLimit.maxPerHour;
   if (maxPerHour !== null) {
@@ -58,16 +65,22 @@ export async function ask(input: { question: string; history?: ChatTurn[] }): Pr
   const stream = createStreamableValue<string>("");
 
   (async () => {
+    let acc = "";
     try {
-      let acc = "";
       for await (const delta of streamAsk({ question, history, kbText, model: settings.model })) {
         acc += delta;
         stream.update(acc);
       }
       stream.done(acc);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "model error";
-      stream.error(new Error(msg));
+      console.error("[ask] streamAsk failed", err);
+      const raw = err instanceof Error ? err.message : "model error";
+      // In production, Next masks server-action error payloads. Send the
+      // message as a final stream update so the user sees a real reason
+      // instead of the generic "Server Components render" mask.
+      const friendly = `[error: ${raw}]`;
+      stream.update(acc ? `${acc}\n${friendly}` : friendly);
+      stream.done();
     }
   })();
 

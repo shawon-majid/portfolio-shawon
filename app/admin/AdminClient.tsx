@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import NotesPanel from "./NotesPanel";
 import SettingsPanel from "./SettingsPanel";
 
 type Entry = {
@@ -12,6 +13,7 @@ type Entry = {
   uploadedAt: string;
   rawUrl: string;
   textUrl: string;
+  editable?: boolean;
 };
 
 type Status = { tone: "" | "ok" | "err"; msg: string };
@@ -114,6 +116,8 @@ export default function AdminClient() {
 
       <SettingsPanel />
 
+      <NotesPanel onChanged={refresh} />
+
       <section>
         <h2>upload</h2>
         <label
@@ -146,13 +150,13 @@ export default function AdminClient() {
       </section>
 
       <section>
-        <h2>knowledge base ({entries.length})</h2>
+        <h2>uploaded docs ({entries.filter((e) => !e.editable).length})</h2>
         {loading ? (
           <div className="empty">loading…</div>
-        ) : entries.length === 0 ? (
-          <div className="empty">no docs yet — upload a resume, case study, or notes.</div>
+        ) : entries.filter((e) => !e.editable).length === 0 ? (
+          <div className="empty">no uploaded docs yet — upload a resume, case study, or report.</div>
         ) : (
-          entries.map((e) => (
+          entries.filter((e) => !e.editable).map((e) => (
             <div className="row" key={e.id}>
               <div>
                 <div className="name">

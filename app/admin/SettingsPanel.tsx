@@ -16,15 +16,15 @@ type Settings = {
 type Status = { tone: "" | "ok" | "err"; msg: string };
 
 const MODEL_SUGGESTIONS = [
-  "gpt-4o-mini",
-  "gpt-4o",
-  "gpt-4.1",
-  "gpt-4.1-mini",
-  "gpt-5",
-  "gpt-5-mini",
-  "gpt-5.2",
-  "gpt-5.4",
-  "o4-mini",
+  "openrouter/free",
+  "openrouter/auto",
+  "anthropic/claude-3.5-haiku",
+  "anthropic/claude-3.5-sonnet",
+  "openai/gpt-4o-mini",
+  "openai/gpt-4o",
+  "google/gemini-2.0-flash-exp:free",
+  "meta-llama/llama-3.3-70b-instruct:free",
+  "deepseek/deepseek-chat:free",
 ];
 
 const RATE_PRESETS = [
@@ -197,19 +197,19 @@ export default function SettingsPanel() {
         </label>
 
         <label className="field">
-          <span className="field-label">openai model</span>
+          <span className="field-label">openrouter model</span>
           <input
             list="model-suggestions"
             value={draft.model}
             onChange={(e) => setDraft({ ...draft, model: e.target.value })}
-            placeholder="gpt-4o-mini"
+            placeholder="openrouter/free"
           />
           <datalist id="model-suggestions">
             {MODEL_SUGGESTIONS.map((m) => (
               <option key={m} value={m} />
             ))}
           </datalist>
-          <span className="hint">free-text · openai will reject unknown ids at runtime</span>
+          <span className="hint">openrouter model id · `openrouter/free` routes to free models; suffix `:free` picks free providers</span>
         </label>
 
         <label className="field">
@@ -235,7 +235,7 @@ export default function SettingsPanel() {
             />
           )}
           {rateMode === "unlimited" && (
-            <span className="hint warn">no cap — anyone can burn openai credits. consider a real limit.</span>
+            <span className="hint warn">no cap — anyone can burn openrouter credits. consider a real limit.</span>
           )}
         </label>
 

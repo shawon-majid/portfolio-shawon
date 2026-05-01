@@ -33,7 +33,7 @@ export const MAX_RATE_LIMIT = 1_000_000;
 export function defaultSettings(): Settings {
   return {
     askEnabled: true,
-    model: process.env.OPENAI_MODEL || "gpt-4o-mini",
+    model: process.env.OPENROUTER_MODEL || "openrouter/free",
     rateLimit: {
       maxPerHour: Number(process.env.ASK_RATE_LIMIT_MAX) || 10,
     },

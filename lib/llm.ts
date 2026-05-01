@@ -1,4 +1,4 @@
-import OpenAI from "openai";
+import { OpenRouter } from "@openrouter/sdk";
 import { PROFILE, SYSTEM_PROMPT } from "./profile";
 
 export type ChatTurn = { role: "user" | "assistant"; content: string };
@@ -10,12 +10,16 @@ export function buildSystemContent(kbText: string): string {
   return `${SYSTEM_PROMPT}\n\nPROFILE:\n${PROFILE}${kbBlock}`;
 }
 
-let client: OpenAI | null = null;
-function getClient(): OpenAI {
+let client: OpenRouter | null = null;
+function getClient(): OpenRouter {
   if (client) return client;
-  const key = process.env.OPENAI_API_KEY;
-  if (!key) throw new Error("OPENAI_API_KEY is not set");
-  client = new OpenAI({ apiKey: key });
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey) throw new Error("OPENROUTER_API_KEY is not set");
+  client = new OpenRouter({
+    apiKey,
+    httpReferer: process.env.OPENROUTER_REFERER || "https://shawonmajid.com",
+    appTitle: process.env.OPENROUTER_APP_TITLE || "ask-shawon",
+  });
   return client;
 }
 
@@ -30,15 +34,17 @@ export async function* streamAsk(opts: {
     ...opts.history.slice(-6).map((t) => ({ role: t.role, content: t.content })),
     { role: "user" as const, content: opts.question },
   ];
-  const completion = await getClient().chat.completions.create({
-    model: opts.model,
-    messages,
-    stream: true,
-    temperature: 0.5,
-    max_tokens: 500,
+  const stream = await getClient().chat.send({
+    chatRequest: {
+      model: opts.model,
+      messages,
+      stream: true,
+      temperature: 0.5,
+      maxTokens: 500,
+    },
   });
-  for await (const chunk of completion) {
+  for await (const chunk of stream) {
     const delta = chunk.choices?.[0]?.delta?.content;
-    if (delta) yield delta;
+    if (typeof delta === "string" && delta) yield delta;
   }
 }

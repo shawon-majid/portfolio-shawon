@@ -222,7 +222,9 @@ export default function Terminal({ initial }: { initial: InitialSettings }) {
             }
           }
         } catch (err) {
-          const msg = err instanceof Error ? err.message : "stream error";
+          const raw = err instanceof Error ? err.message : "stream error";
+          const masked = /Server Components render/i.test(raw);
+          const msg = masked ? "ai request failed — try again, or email shawon.majid@gmail.com." : raw;
           if (acc) {
             push("ai", `${acc}\n[error: ${msg}]`);
           } else {
@@ -246,8 +248,9 @@ export default function Terminal({ initial }: { initial: InitialSettings }) {
         }
         setStreaming("");
       } catch (err) {
-        const msg = err instanceof Error ? err.message : "request failed";
-        push("err", msg);
+        const raw = err instanceof Error ? err.message : "request failed";
+        const masked = /Server Components render/i.test(raw);
+        push("err", masked ? "ai request failed — try again, or email shawon.majid@gmail.com." : raw);
       } finally {
         setBusy(false);
         setTimeout(() => inputRef.current?.focus(), 50);
@@ -277,7 +280,7 @@ export default function Terminal({ initial }: { initial: InitialSettings }) {
     <div className="app">
       <header className="bar">
         <div className="brand">
-          <span className="sq" /> shawon.majid
+          <span className="sq" /> Shawon Majid
         </div>
         <nav className="bar-links">
           <a href="https://github.com/shawon-majid" target="_blank" rel="noreferrer">github</a>
@@ -398,11 +401,11 @@ export default function Terminal({ initial }: { initial: InitialSettings }) {
       </main>
 
       <footer className="foot">
-        <span>built with next.js · react · openai</span>
+        <span>built with ai</span>
         <span className="keys">
           <kbd>/</kbd> focus <kbd>Ctrl</kbd>+<kbd>L</kbd> clear <kbd>↵</kbd> send
         </span>
-        <span suppressHydrationWarning>© {new Date().getFullYear()} shawon majid</span>
+        <span suppressHydrationWarning>© {new Date().getFullYear()} Shawon Majid</span>
       </footer>
     </div>
   );

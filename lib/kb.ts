@@ -9,6 +9,7 @@ export type KbEntry = {
   uploadedAt: string;
   rawUrl: string;
   textUrl: string;
+  editable?: boolean;
 };
 
 const MANIFEST_PREFIX = "kb/manifest-";
@@ -101,6 +102,99 @@ export async function addKb(input: {
   await writeManifest(manifest);
   cache = null;
   return entry;
+}
+
+export async function addKbNote(input: {
+  title: string;
+  body: string;
+}): Promise<KbEntry> {
+  const id = crypto.randomUUID();
+  const rawPath = `kb/raw/${id}.md`;
+  const textPath = `kb/text/${id}.txt`;
+
+  const rawBlob = await put(rawPath, input.body, {
+    access: "public",
+    contentType: "text/markdown; charset=utf-8",
+    addRandomSuffix: false,
+  });
+  const textBlob = await put(textPath, input.body, {
+    access: "public",
+    contentType: "text/plain; charset=utf-8",
+    addRandomSuffix: false,
+  });
+
+  const entry: KbEntry = {
+    id,
+    name: input.title.trim() || "untitled note",
+    kind: "markdown",
+    size: new TextEncoder().encode(input.body).byteLength,
+    chars: input.body.length,
+    uploadedAt: new Date().toISOString(),
+    rawUrl: rawBlob.url,
+    textUrl: textBlob.url,
+    editable: true,
+  };
+
+  const manifest = await readManifest();
+  manifest.unshift(entry);
+  await writeManifest(manifest);
+  cache = null;
+  return entry;
+}
+
+export async function updateKbNote(
+  id: string,
+  input: { title: string; body: string },
+): Promise<KbEntry | null> {
+  const manifest = await readManifest();
+  const idx = manifest.findIndex((e) => e.id === id);
+  if (idx === -1) return null;
+  const existing = manifest[idx];
+  if (!existing.editable) return null;
+
+  // Best-effort delete the old blobs first; Vercel Blob `put` does not
+  // overwrite by default and would otherwise leak the previous content.
+  await Promise.allSettled([del(existing.rawUrl), del(existing.textUrl)]);
+
+  const rawPath = `kb/raw/${id}.md`;
+  const textPath = `kb/text/${id}.txt`;
+  const rawBlob = await put(rawPath, input.body, {
+    access: "public",
+    contentType: "text/markdown; charset=utf-8",
+    addRandomSuffix: false,
+  });
+  const textBlob = await put(textPath, input.body, {
+    access: "public",
+    contentType: "text/plain; charset=utf-8",
+    addRandomSuffix: false,
+  });
+
+  const updated: KbEntry = {
+    ...existing,
+    name: input.title.trim() || "untitled note",
+    size: new TextEncoder().encode(input.body).byteLength,
+    chars: input.body.length,
+    uploadedAt: new Date().toISOString(),
+    rawUrl: rawBlob.url,
+    textUrl: textBlob.url,
+  };
+  manifest[idx] = updated;
+  await writeManifest(manifest);
+  cache = null;
+  return updated;
+}
+
+export async function getKbNoteBody(id: string): Promise<string | null> {
+  const manifest = await readManifest();
+  const entry = manifest.find((e) => e.id === id);
+  if (!entry || !entry.editable) return null;
+  try {
+    const res = await fetch(entry.textUrl, { cache: "no-store" });
+    if (!res.ok) return null;
+    return await res.text();
+  } catch {
+    return null;
+  }
 }
 
 export async function deleteKb(id: string): Promise<boolean> {
