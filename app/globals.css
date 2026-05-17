@@ -176,10 +176,23 @@ body::before {
   font: inherit; padding: 2px 6px; border: .5px solid var(--rule-2);
   border-radius: 4px; color: var(--ink-2); margin: 0 3px; background: rgba(255,255,255,.02);
 }
+.foot-links { display: none; }
 @media (max-width: 720px) {
-  .foot { padding: 14px 20px; }
+  .foot {
+    padding: 12px 20px 16px;
+    flex-direction: column; gap: 8px;
+    text-align: center;
+  }
   .foot .keys { display: none; }
-  .foot span:first-child { display: none; }
+  .foot > span:first-child { display: none; }
+  .foot-links {
+    display: flex; flex-wrap: wrap; justify-content: center;
+    gap: 18px; font-size: 12.5px; color: var(--ink-2);
+    letter-spacing: .02em;
+  }
+  .foot-links a { transition: color .15s; }
+  .foot-links a:active,
+  .foot-links a:hover { color: var(--accent); }
   .stage { padding: 0 20px 16px; gap: 20px; }
 }
 

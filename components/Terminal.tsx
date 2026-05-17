@@ -402,6 +402,12 @@ export default function Terminal({ initial }: { initial: InitialSettings }) {
 
       <footer className="foot">
         <span>built with ai</span>
+        <nav className="foot-links">
+          <a href="https://github.com/shawon-majid" target="_blank" rel="noreferrer">github</a>
+          <a href="https://linkedin.com/in/shawon-majid" target="_blank" rel="noreferrer">linkedin</a>
+          <a href="mailto:shawon.majid@gmail.com">email</a>
+          <a href="/uploads/Shawon-Majid-FlowCV-Resume-20260214.pdf" target="_blank">resume</a>
+        </nav>
         <span className="keys">
           <kbd>/</kbd> focus <kbd>Ctrl</kbd>+<kbd>L</kbd> clear <kbd>↵</kbd> send
         </span>
