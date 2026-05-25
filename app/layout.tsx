@@ -1,10 +1,43 @@
 import type { Metadata } from "next";
 import "./globals.css";
 
+const DESCRIPTION =
+  "Shawon Majid — software engineer. AI-augmented backends, agentic workflows, serverless on AWS + GCP. Ask me anything.";
+
 export const metadata: Metadata = {
-  title: "Shawon Majid",
-  description:
-    "Shawon Majid — software engineer. AI-augmented backends, agentic workflows, serverless on AWS + GCP. Ask me anything.",
+  metadataBase: new URL("https://shawonmajid.com"),
+  title: {
+    default: "Shawon Majid — Software Engineer",
+    template: "%s · Shawon Majid",
+  },
+  description: DESCRIPTION,
+  keywords: [
+    "Shawon Majid",
+    "Software Engineer",
+    "AI Engineer",
+    "LangGraph",
+    "AWS",
+    "GCP",
+    "serverless",
+    "agentic workflows",
+    "backend engineer",
+  ],
+  authors: [{ name: "Shawon Majid", url: "https://shawonmajid.com" }],
+  creator: "Shawon Majid",
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    url: "https://shawonmajid.com",
+    siteName: "Shawon Majid",
+    title: "Shawon Majid — Software Engineer",
+    description: DESCRIPTION,
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Shawon Majid — Software Engineer",
+    description: DESCRIPTION,
+  },
 };
 
 export default function RootLayout({

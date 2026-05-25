@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { readStreamableValue } from "ai/rsc";
 import { ask } from "@/app/actions/ask";
+import { LINKS, RESUME_PATH } from "@/lib/links";
 
 type Kind = "user" | "sys" | "ai" | "err";
 type Line = { id: number; kind: Kind; text: string };
@@ -118,6 +119,10 @@ export default function Terminal({ initial }: { initial: InitialSettings }) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const bodyRef = useRef<HTMLDivElement | null>(null);
   const idRef = useRef(1);
+  // Whether the terminal input is currently on-screen. Gates the global
+  // "type/click anywhere to focus" listeners so they don't yank the viewport
+  // back to the terminal once a visitor scrolls into the portfolio below.
+  const heroVisibleRef = useRef(true);
   const tagline = useTyper(initial.headlines.length ? initial.headlines : ["ask-shawon"]);
 
   const push = useCallback((kind: Kind, text: string) => {
@@ -129,22 +134,50 @@ export default function Terminal({ initial }: { initial: InitialSettings }) {
   }, [history, busy, streaming]);
 
   useEffect(() => {
-    const focus = () => inputRef.current?.focus();
-    focus();
+    const el = inputRef.current;
+    if (!el) return;
+    el.focus();
+
+    // Track whether the terminal input is on-screen so the global focus
+    // listeners can stand down once the visitor scrolls into the portfolio.
+    let io: IntersectionObserver | null = null;
+    if (typeof IntersectionObserver !== "undefined") {
+      io = new IntersectionObserver(
+        ([entry]) => {
+          heroVisibleRef.current = entry.isIntersecting;
+        },
+        { threshold: 0 },
+      );
+      io.observe(el);
+    }
+
     const onKey = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
-      if (target?.tagName === "INPUT") return;
-      if (e.key === "/" || (e.key.length === 1 && !e.metaKey && !e.ctrlKey)) focus();
+      if (target?.tagName === "INPUT" || target?.tagName === "TEXTAREA") return;
+      // Ctrl+L clears the terminal from anywhere on the page.
       if (e.ctrlKey && e.key.toLowerCase() === "l") {
         e.preventDefault();
         setHistory([]);
+        return;
       }
+      if (!heroVisibleRef.current) return;
+      if (e.key === "/" || (e.key.length === 1 && !e.metaKey && !e.ctrlKey)) el.focus();
     };
+
+    const onClick = (e: MouseEvent) => {
+      if (!heroVisibleRef.current) return;
+      const t = e.target as HTMLElement | null;
+      // Leave links/buttons/inputs alone (scroll cue, chips, CTA buttons).
+      if (t && t.closest("a, button, input, textarea, label")) return;
+      el.focus();
+    };
+
     window.addEventListener("keydown", onKey);
-    window.addEventListener("click", focus);
+    window.addEventListener("click", onClick);
     return () => {
+      io?.disconnect();
       window.removeEventListener("keydown", onKey);
-      window.removeEventListener("click", focus);
+      window.removeEventListener("click", onClick);
     };
   }, []);
 
@@ -173,7 +206,7 @@ export default function Terminal({ initial }: { initial: InitialSettings }) {
       }
       if (q === "/resume") {
         push("ai", "→ opening resume PDF in a new tab");
-        window.open("/uploads/Shawon-Majid-FlowCV-Resume-20260214.pdf", "_blank");
+        window.open(RESUME_PATH, "_blank");
         return;
       }
       if (q === "/projects") {
@@ -283,10 +316,10 @@ export default function Terminal({ initial }: { initial: InitialSettings }) {
           <span className="sq" /> Shawon Majid
         </div>
         <nav className="bar-links">
-          <a href="https://github.com/shawon-majid" target="_blank" rel="noreferrer">github</a>
-          <a href="https://linkedin.com/in/shawon-majid" target="_blank" rel="noreferrer">linkedin</a>
-          <a href="mailto:shawon.majid@gmail.com">email</a>
-          <a href="/uploads/Shawon-Majid-FlowCV-Resume-20260214.pdf" target="_blank">resume</a>
+          <a href={LINKS.github} target="_blank" rel="noreferrer">github</a>
+          <a href={LINKS.linkedin} target="_blank" rel="noreferrer">linkedin</a>
+          <a href={LINKS.emailHref}>email</a>
+          <a href={RESUME_PATH} target="_blank">resume</a>
         </nav>
         <div className="bar-meta">
           <span className="pulse">
@@ -398,15 +431,20 @@ export default function Terminal({ initial }: { initial: InitialSettings }) {
             </button>
           ))}
         </div>
+
+        <a className="scroll-cue" href="#about" aria-label="Scroll to portfolio">
+          <span>scroll</span>
+          <i aria-hidden="true">↓</i>
+        </a>
       </main>
 
       <footer className="foot">
         <span>built with ai</span>
         <nav className="foot-links">
-          <a href="https://github.com/shawon-majid" target="_blank" rel="noreferrer">github</a>
-          <a href="https://linkedin.com/in/shawon-majid" target="_blank" rel="noreferrer">linkedin</a>
-          <a href="mailto:shawon.majid@gmail.com">email</a>
-          <a href="/uploads/Shawon-Majid-FlowCV-Resume-20260214.pdf" target="_blank">resume</a>
+          <a href={LINKS.github} target="_blank" rel="noreferrer">github</a>
+          <a href={LINKS.linkedin} target="_blank" rel="noreferrer">linkedin</a>
+          <a href={LINKS.emailHref}>email</a>
+          <a href={RESUME_PATH} target="_blank">resume</a>
         </nav>
         <span className="keys">
           <kbd>/</kbd> focus <kbd>Ctrl</kbd>+<kbd>L</kbd> clear <kbd>↵</kbd> send
